@@ -5,6 +5,7 @@ import { SectorChart } from '@/components/SectorChart';
 import { HoldingsChart } from '@/components/HoldingsChart';
 import { HoldingsTable } from '@/components/HoldingsTable';
 import { ConcentrationWarnings } from '@/components/ConcentrationWarnings';
+import { ExportButton } from '@/components/ExportButton';
 import { usePortfolioAnalysis } from '@/hooks/usePortfolioAnalysis';
 
 export default function Home() {
@@ -68,6 +69,11 @@ export default function Home() {
               </h2>
               <HoldingsChart exposures={result.exposures} warnings={result.warnings} />
             </div>
+          </div>
+
+          {/* Export Button */}
+          <div className="flex justify-end">
+            <ExportButton result={result} entries={entries} />
           </div>
 
           {/* Data Table */}

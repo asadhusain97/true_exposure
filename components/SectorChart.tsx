@@ -1,7 +1,7 @@
 'use client';
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
-import { SectorExposure } from '@/lib/aggregator';
+import { SectorExposure } from '@/lib/types';
 
 interface SectorChartProps {
     exposures: SectorExposure[];
@@ -65,7 +65,7 @@ export function SectorChart({ exposures }: SectorChartProps) {
                         <LabelList
                             dataKey="weight"
                             position="right"
-                            formatter={(val: number) => `${val.toFixed(1)}%`}
+                            formatter={(val: any) => `${val.toFixed(1)}%`}
                             style={{ fontSize: 12, fill: '#71717a' }}
                         />
                     </Bar>
