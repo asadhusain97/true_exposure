@@ -4,7 +4,7 @@ import { PortfolioInput } from '@/components/PortfolioInput';
 import { SectorChart } from '@/components/SectorChart';
 import { HoldingsChart } from '@/components/HoldingsChart';
 import { HoldingsTable } from '@/components/HoldingsTable';
-import { ConcentrationWarning } from '@/components/ConcentrationWarning';
+import { ConcentrationWarnings } from '@/components/ConcentrationWarnings';
 import { usePortfolioAnalysis } from '@/hooks/usePortfolioAnalysis';
 
 export default function Home() {
@@ -37,15 +37,17 @@ export default function Home() {
 
       {/* Results Section */}
       {result ? (
-        <div className="space-y-12 animate-fade-in">
+        <div className="space-y-8 animate-fade-in">
 
-          {/* Warnings */}
-          {result.warnings.length > 0 && (
-            <div className="max-w-4xl mx-auto">
-              <h2 className="text-xl font-semibold mb-4">Concentration Warnings</h2>
-              <ConcentrationWarning warnings={result.warnings} />
-            </div>
-          )}
+          {/* Concentration Analysis */}
+          <div className="max-w-4xl mx-auto mb-8">
+            <h3 className="text-sm text-gray-500 dark:text-gray-400 mb-2">Concentration Analysis</h3>
+            {result.warnings.length > 0 ? (
+              <ConcentrationWarnings warnings={result.warnings} />
+            ) : (
+              <p className="text-green-600">No concentration concerns detected</p>
+            )}
+          </div>
 
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -64,7 +66,7 @@ export default function Home() {
                 <span className="w-2 h-6 bg-indigo-500 rounded-sm mr-2"></span>
                 Top Holdings
               </h2>
-              <HoldingsChart exposures={result.exposures} />
+              <HoldingsChart exposures={result.exposures} warnings={result.warnings} />
             </div>
           </div>
 

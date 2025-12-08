@@ -1,4 +1,4 @@
-import { PortfolioEntry, AnalysisResult, AggregatedExposure, FundData, SectorExposure } from './types';
+import { PortfolioEntry, AnalysisResult, AggregatedExposure, FundData, SectorExposure, ConcentrationWarning } from './types';
 import { getHoldingsData } from './data/mock-holdings';
 
 export async function analyzePortfolio(entries: PortfolioEntry[]): Promise<AnalysisResult> {
@@ -26,15 +26,13 @@ function aggregatePortfolio(
     const hasAmounts = entries.some(e => e.amount !== undefined && e.amount > 0);
 
     // Calculate effective weights for each entry
-    // If no amounts provided, treat all equally (1/N)
-    // If some amounts provided, use amounts (treating undefined as 0)
     const entryWeights = entries.map(entry => {
         if (!hasAmounts) {
             return { ...entry, effectiveWeight: 1 / entries.length, effectiveValue: 0 };
         } else {
             const val = entry.amount || 0;
             totalPortfolioValue += val;
-            return { ...entry, effectiveWeight: 0, effectiveValue: val }; // Weight calc after total sum
+            return { ...entry, effectiveWeight: 0, effectiveValue: val };
         }
     });
 
@@ -54,10 +52,7 @@ function aggregatePortfolio(
         }
 
         fundData.holdings.forEach(holding => {
-            // Calculate this holding's contribution to total portfolio
             const contributionWeight = holding.weight * entry.effectiveWeight;
-
-            // Calculate dollar value if applicable
             const contributionValue = hasAmounts ? (holding.weight * entry.effectiveValue) : undefined;
 
             const existing = exposureMap.get(holding.ticker);
@@ -85,19 +80,106 @@ function aggregatePortfolio(
         });
     });
 
-    // Convert map to array and sort
+    // Convert to array and sort
     const exposures = Array.from(exposureMap.values())
         .sort((a, b) => b.totalWeight - a.totalWeight);
 
     // Calculate sector exposures
     const sectorExposures = aggregateBySector(exposures, holdingsLookup);
 
+    // Generate concentration warnings
+    const warnings = generateWarnings(exposures, sectorExposures);
+
     return {
         exposures,
         sectorExposures,
-        warnings: [], // Placeholder
-        totalAnalyzed: totalPortfolioValue || exposures.length // Return total value or count for now
+        warnings,
+        totalAnalyzed: totalPortfolioValue || exposures.length
     };
+}
+
+function generateWarnings(
+    exposures: AggregatedExposure[],
+    sectorExposures: SectorExposure[]
+): ConcentrationWarning[] {
+    const warnings: ConcentrationWarning[] = [];
+    const warningTickers = new Set<string>(); // Track tickers to avoid duplicates
+
+    // 1. Single holding concentration warnings (only keep highest severity per ticker)
+    exposures.forEach(exp => {
+        const pct = exp.totalWeight * 100;
+
+        if (pct > 20) {
+            warnings.push({
+                ticker: exp.ticker,
+                percentage: pct,
+                severity: 'high',
+                message: `${exp.ticker} represents ${pct.toFixed(1)}% of your portfolio`
+            });
+            warningTickers.add(exp.ticker);
+        } else if (pct > 15 && !warningTickers.has(exp.ticker)) {
+            warnings.push({
+                ticker: exp.ticker,
+                percentage: pct,
+                severity: 'medium',
+                message: `${exp.ticker} represents ${pct.toFixed(1)}% of your portfolio`
+            });
+            warningTickers.add(exp.ticker);
+        } else if (pct > 10 && !warningTickers.has(exp.ticker)) {
+            warnings.push({
+                ticker: exp.ticker,
+                percentage: pct,
+                severity: 'low',
+                message: `${exp.ticker} represents ${pct.toFixed(1)}% of your portfolio`
+            });
+            warningTickers.add(exp.ticker);
+        }
+    });
+
+    // 2. Top 3 concentration warning
+    if (exposures.length >= 3) {
+        const top3Weight = exposures.slice(0, 3).reduce((sum, exp) => sum + exp.totalWeight, 0);
+        const top3Pct = top3Weight * 100;
+
+        if (top3Pct > 40) {
+            const top3Tickers = exposures.slice(0, 3).map(e => e.ticker).join(', ');
+            warnings.push({
+                ticker: 'TOP3',
+                percentage: top3Pct,
+                severity: 'medium',
+                message: `Your top 3 holdings (${top3Tickers}) make up ${top3Pct.toFixed(1)}% of your portfolio`
+            });
+        }
+    }
+
+    // 3. Sector concentration warnings
+    sectorExposures.forEach(sector => {
+        if (sector.sector === 'Unknown') return; // Skip unknown sectors
+
+        const pct = sector.weight * 100;
+
+        if (pct > 65) {
+            warnings.push({
+                ticker: sector.sector,
+                percentage: pct,
+                severity: 'high',
+                message: `${pct.toFixed(1)}% of your portfolio is in ${sector.sector}`
+            });
+        } else if (pct > 50) {
+            warnings.push({
+                ticker: sector.sector,
+                percentage: pct,
+                severity: 'medium',
+                message: `${pct.toFixed(1)}% of your portfolio is in ${sector.sector}`
+            });
+        }
+    });
+
+    // Sort by severity (high → medium → low)
+    const severityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
+    warnings.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+
+    return warnings;
 }
 
 export function aggregateBySector(
@@ -107,12 +189,7 @@ export function aggregateBySector(
     const sectorMap = new Map<string, SectorExposure>();
 
     exposures.forEach(exp => {
-        // Look up sector primarily from the mock data again ensuring we get it
-        // Since we might not have stored it on AggregatedExposure yet
         const data = holdingsLookup(exp.ticker);
-
-        // Find the specific holding in that fund data that matches our ticker
-        // (In our mock, looking up indvidual stock returns it as single holding)
         const holdingData = data?.holdings.find(h => h.ticker === exp.ticker);
         const sector = holdingData?.sector || 'Unknown';
 
