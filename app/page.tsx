@@ -1,7 +1,8 @@
 'use client';
 
 import { PortfolioInput } from '@/components/PortfolioInput';
-import { ExposureChart } from '@/components/ExposureChart';
+import { SectorChart } from '@/components/SectorChart';
+import { HoldingsChart } from '@/components/HoldingsChart';
 import { HoldingsTable } from '@/components/HoldingsTable';
 import { ConcentrationWarning } from '@/components/ConcentrationWarning';
 import { usePortfolioAnalysis } from '@/hooks/usePortfolioAnalysis';
@@ -46,21 +47,36 @@ export default function Home() {
             </div>
           )}
 
-          {/* Charts & Data */}
+          {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left: Sector Breakdown */}
             <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-              <h2 className="text-lg font-semibold mb-6">Exposure Distribution</h2>
-              <ExposureChart exposures={result.exposures} />
+              <h2 className="text-lg font-semibold mb-6 flex items-center">
+                <span className="w-2 h-6 bg-blue-500 rounded-sm mr-2"></span>
+                Sector Allocation
+              </h2>
+              <SectorChart exposures={result.sectorExposures} />
             </div>
 
+            {/* Right: Top Holdings */}
             <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-              <h2 className="text-lg font-semibold mb-6">Top Underlying Holdings</h2>
-              <HoldingsTable exposures={result.exposures} />
+              <h2 className="text-lg font-semibold mb-6 flex items-center">
+                <span className="w-2 h-6 bg-indigo-500 rounded-sm mr-2"></span>
+                Top Holdings
+              </h2>
+              <HoldingsChart exposures={result.exposures} />
             </div>
           </div>
+
+          {/* Data Table */}
+          <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+            <h2 className="text-lg font-semibold mb-6">All Underlying Holdings</h2>
+            <HoldingsTable exposures={result.exposures} />
+          </div>
+
         </div>
       ) : (
-        /* Empty State / Placeholder for results */
+        /* Empty State */
         <div className="text-center py-20 border-t border-zinc-200 dark:border-zinc-800">
           <p className="text-zinc-400 dark:text-zinc-600">
             Enter your holdings above to see the breakdown.

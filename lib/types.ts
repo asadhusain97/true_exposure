@@ -26,6 +26,12 @@ export interface AggregatedExposure {
     sources: { fund: string; contribution: number }[];
 }
 
+export interface SectorExposure {
+    sector: string;
+    weight: number;
+    dollarExposure?: number;
+}
+
 export interface ConcentrationWarning {
     ticker: string;
     percentage: number;
@@ -35,6 +41,7 @@ export interface ConcentrationWarning {
 
 export interface AnalysisResult {
     exposures: AggregatedExposure[];
+    sectorExposures: SectorExposure[];
     warnings: ConcentrationWarning[];
     totalAnalyzed: number;
 }
