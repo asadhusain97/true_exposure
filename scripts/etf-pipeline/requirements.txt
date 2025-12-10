@@ -1,0 +1,6 @@
+etf-scraper>=0.1.2
+yfinance>=0.2.36
+pandas>=2.2.0
+tqdm>=4.66.0
+tenacity>=8.2.0
+pytest>=8.0.0

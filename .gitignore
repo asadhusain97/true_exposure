@@ -9,6 +9,9 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+.venv/
+scripts/etf-pipeline/venv/
+scripts/etf-pipeline/__pycache__
 
 # testing
 /coverage
